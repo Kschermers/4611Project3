@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+        <title>Programming Assignment 3: Illumination Modeling</title>
+
+        <script id="vertex-shader" type="x-shader/x-vertex">
+            attribute vec4 vPosition;
+            attribute vec3 vNormal;
+            
+            varying vec4 color;
+            
+            uniform vec4 AmbientProduct, DiffuseProduct, SpecularProduct;
+            
+            uniform mat4 ModelView;
+            uniform mat4 Projection;
+            uniform vec4 LightPosition;
+            uniform float Shininess;
+
+            uniform bool hasTex;
+            attribute vec2 vTexCoord;
+            varying vec2 texCoord;
+
+            void main()
+            {
+                if (!hasTex) {
+                    // Transform vertex position into eye coordinates
+                    vec3 pos = (ModelView * vPosition).xyz;
+                
+                    vec3 L = normalize(LightPosition.xyz - pos);
+                    vec3 E = normalize(-pos);
+                    vec3 H = normalize(L + E);
+                
+                    // Transform vertex normal into eye coordinates
+                    vec3 N = normalize(vec3(ModelView * vec4(vNormal, 0)));
+                
+                    // Compute terms in the illumination equation*/
+                    vec4 ambient = AmbientProduct;
+                
+                    float Kd = max(dot(L, N), 0.0);
+                    vec4  diffuse = Kd * DiffuseProduct;
+                                        
+                    float Ks = pow(max(dot(N, H), 0.0), Shininess);
+                    vec4  specular = Ks * SpecularProduct;
+                
+                    if( dot(L, N) < 0.0 ) {
+                       specular = vec4(0.0, 0.0, 0.0, 1.0);
+                    }
+                
+                    gl_Position = Projection * ModelView * vPosition;
+                
+                    color = ambient + diffuse + specular;
+                    color.a = 1.0;
+                } else {
+
+                    // Transform vertex position into eye coordinates
+                    vec3 pos = (ModelView * vPosition).xyz;
+
+                    vec3 L = normalize(LightPosition.xyz - pos);
+                    vec3 E = normalize(-pos);
+                    vec3 H = normalize(L + E);
+
+                    // Transform vertex normal into eye coordinates
+                    vec3 N = normalize(vec3(ModelView * vec4(vNormal, 0)));
+
+                    // Compute terms in the illumination equation*/
+                    vec4 ambient = AmbientProduct;
+
+                    float Kd = max(dot(L, N), 0.0);
+                    vec4  diffuse = Kd * DiffuseProduct;
+
+                    float Ks = pow(max(dot(N, H), 0.0), Shininess);
+                    vec4  specular = Ks * SpecularProduct;
+
+                    if( dot(L, N) < 0.0 ) {
+                       specular = vec4(0.0, 0.0, 0.0, 1.0);
+                    }
+
+                    gl_Position = Projection * ModelView * vPosition;
+
+                    color = ambient + diffuse + specular;
+                    color.a = 1.0;
+
+                    texCoord = vTexCoord;
+                }
+
+            }
+        </script>
+
+        <script id="fragment-shader" type="x-shader/x-fragment">
+            precision mediump float;
+            
+            varying vec4 color;
+            varying vec2 texCoord;
+
+            uniform sampler2D texMap;
+
+            void main()
+            {
+                if (!hasTex) {
+                    gl_FragColor = color;
+                } else {
+                    gl_FragColor = color * texture2D(texMap, texCoord);
+                }
+            }
+        </script>
+
+        <script type="text/javascript" src="webgl-utils.js"></script>
+        <script type="text/javascript" src="initShaders.js"></script>
+        <script type="text/javascript" src="MV.js"></script>
+        <script type="text/javascript" src="program3.js"></script>
+    </head>
+
+    <body>
+        <canvas id="gl-canvas" width="512" height="400">
+            Oops ... your browser doesn't support the HTML5 canvas element
+        </canvas>
+        <div>
+            Shape:
+            <select id="shape-select">
+                <option value="profile1">Profile 1</option>
+                <option value="profile2">Profile 2</option>
+                <option value="profile3">Profile 3</option>
+                <option value="profile4">Profile 4</option>
+                <option value="profile5">Profile 5</option>
+            </select>
+        </div>
+        <div>
+            Number of angles: <input id="numAngles" type="number" value="8" min="3" max="25" step="1" />
+        </div>
+        <div>
+            Number of steps per curve: <input id="stepsPerCurve" type="number" value="6" min="2" max="10" step="1" />
+        </div>
+        <div>
+            Material:
+            <select id="material">
+                <option value="plastic" selected="selected">Yellow Plastic</option>
+                <option value="brass">Brass Metal</option>
+                <option value="texture">Texture Map</option>
+            </select>
+        </div>
+        <div>
+            Texture Image:
+            <select id="texture-image">
+                <option value="none" selected="selected">None</option>
+                <option value="tile">Tile</option>
+                <option value="wood">Wood</option>
+            </select>
+        </div>
+        <div>
+            <img id="tile-img" src="http://i.imgur.com/23TQCyu.png" crossorigin="anonymous" hidden="hidden" />
+            <img id="wood-img" src="http://i.imgur.com/F2g6RQZ.png" crossorigin="anonymous" hidden="hidden" />
+        </div>
+    </body>
+</html>
